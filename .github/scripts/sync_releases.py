@@ -107,9 +107,12 @@ def delete_asset(repo: str, asset_id: int, token: str) -> None:
     api_request("DELETE", url, token)
 
 
-def upload_asset(upload_url_template: str, asset_path: Path, token: str) -> None:
+def upload_asset(upload_url_template: str, asset_path: Path, token: str, *, label: str = "") -> None:
     upload_url = upload_url_template.split("{", 1)[0]
-    upload_url = f"{upload_url}?name={urllib.parse.quote(asset_path.name, safe='')}"
+    query = f"name={urllib.parse.quote(asset_path.name, safe='')}"
+    if label:
+        query += f"&label={urllib.parse.quote(label, safe='')}"
+    upload_url = f"{upload_url}?{query}"
     headers = {
         "Accept": "application/vnd.github+json",
         "Authorization": f"Bearer {token}",
@@ -161,7 +164,12 @@ def sync_release(src_release: dict, dst_repo: str, src_token: str, dst_token: st
         old_asset = existing_assets.get(src_asset["name"])
         if old_asset is not None:
             delete_asset(dst_repo, old_asset["id"], dst_token)
-        upload_asset(dst_release["upload_url"], local_path, dst_token)
+        upload_asset(
+            dst_release["upload_url"],
+            local_path,
+            dst_token,
+            label=src_asset.get("label", "") or "",
+        )
 
 
 def main() -> int:
@@ -180,7 +188,10 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="release-sync-") as tmp:
         work_dir = Path(tmp)
         for release in src_releases:
-            sync_release(release, dst_repo, src_token, dst_token, work_dir)
+            detailed_release = get_release_by_tag(src_repo, release["tag_name"], src_token)
+            if detailed_release is None:
+                raise RuntimeError(f"Source release disappeared while syncing: {release['tag_name']}")
+            sync_release(detailed_release, dst_repo, src_token, dst_token, work_dir)
 
     print(f"Synced {len(src_releases)} releases from {src_repo} to {dst_repo}", flush=True)
     return 0
