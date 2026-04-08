@@ -2,6 +2,11 @@ name: Sync Releases
 
 on:
   workflow_dispatch:
+    inputs:
+      source_tag:
+        description: Source release tag that triggered this sync
+        required: false
+        type: string
   schedule:
     - cron: "15 * * * *"
 
@@ -31,4 +36,3 @@ jobs:
           SRC_TOKEN: ${{ secrets.SRC_REPO_TOKEN }}
           DST_TOKEN: ${{ github.token }}
         run: python -u .github/scripts/sync_releases.py
-
