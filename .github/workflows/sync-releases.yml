@@ -31,8 +31,9 @@ jobs:
 
       - name: Sync releases from source repository
         env:
+          TARGET_REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
           SRC_REPO: sorrowfeng/LHandProLib
-          DST_REPO: sorrowfeng/LHandProLib-Releases
-          SRC_TOKEN: ${{ secrets.SRC_REPO_TOKEN }}
-          DST_TOKEN: ${{ github.token }}
+          SRC_REPO_TOKEN: ${{ secrets.SRC_REPO_TOKEN }}
+          SOURCE_TAG: ${{ inputs.source_tag }}
         run: python -u .github/scripts/sync_releases.py
