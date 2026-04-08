@@ -149,7 +149,13 @@ def sync_release(src_release: dict, dst_repo: str, src_token: str, dst_token: st
         print(f"[update] {tag}", flush=True)
         dst_release = update_release(dst_repo, dst_release["id"], dst_token, payload)
 
+    src_asset_names = {asset["name"] for asset in src_release.get("assets", [])}
     existing_assets = {asset["name"]: asset for asset in dst_release.get("assets", [])}
+
+    for asset_name, dst_asset in existing_assets.items():
+        if asset_name not in src_asset_names:
+            delete_asset(dst_repo, dst_asset["id"], dst_token)
+
     for src_asset in src_release.get("assets", []):
         local_path = download_asset(src_asset, src_token, work_dir)
         old_asset = existing_assets.get(src_asset["name"])
