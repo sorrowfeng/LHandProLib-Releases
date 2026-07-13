@@ -100,7 +100,10 @@ class GitHubClient:
                         return None
                     return json.loads(payload.decode("utf-8"))
             except error.HTTPError as exc:
-                payload = exc.read()
+                try:
+                    payload = exc.read()
+                finally:
+                    exc.close()
                 if exc.code == 404 and allow_not_found:
                     return None
                 if can_retry and exc.code in RETRYABLE_STATUS and attempt < 6:
